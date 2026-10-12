@@ -1,0 +1,53 @@
+name: Java Spring CI Pipeline
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  ci-pipeline:
+    name: Check Syntax, Build, Test & Package
+    runs-on: ubuntu-latest
+
+    steps:
+      # Bước 1: Checkout mã nguồn
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Bước 2: Cài đặt môi trường JDK 17
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      # Bước 3: Cấp quyền thực thi cho Gradle Wrapper
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      # Bước 4: Check cú pháp (Syntax Check / Compile)
+      - name: Check syntax & compile
+        run: ./gradlew compileJava --warning-mode all
+
+      # Bước 5: Build ứng dụng
+      - name: Build with Gradle
+        run: ./gradlew classes testClasses
+
+      # Bước 6: Chạy kiểm thử tự động (Unit Test)
+      - name: Run Tests
+        run: ./gradlew test
+
+      # Bước 7: Đóng gói ứng dụng (Package to JAR)
+      - name: Package Application (bootJar)
+        run: ./gradlew bootJar -x test
+
+      # Bước 8: Lưu trữ file artifact (.jar) đã đóng gói
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: spring-boot-app-jar
+          path: build/libs/*.jar
+          retention-days: 7
